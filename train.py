@@ -182,7 +182,7 @@ def main():
 
             else:
                 reduced_loss = total_loss.data
-                
+                print("reduced_loss :", reduced_loss)
                 
             # ----------------
             #   Log progress
