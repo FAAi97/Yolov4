@@ -188,6 +188,8 @@ def main():
         
         torch.save(model.state_dict(), configs.save_path)
         print("Epoch :", epoch+1,'save a checkpoint at {}'.format(configs.save_path))    
+        
+    #-------------------------------------------------------------------------------------  
     # Evaulation        
     #-------------------------------------------------------------------------------------
     # if (epoch+1) % 4 == 0 and (epoch+1) >= 2:
@@ -213,13 +215,12 @@ def main():
     max_mAP_new = AP.mean()
     #-------------------------------------------------------------------------------------
     # plot
-    finalmap=[]
-    finalmap.append(max_mAP_new)
-    plt.plot(finalmap)
-#     plt.axis(False)
-    plt.show()
     #-------------------------------------------------------------------------------------
 
+    finalmap=[]
+    finalmap.append(max_mAP_new)
+    plt.plot(epoch,finalmap)
+    plt.show()
     """
     # Save checkpoint
     if max_mAP_new > max_mAP_max:
