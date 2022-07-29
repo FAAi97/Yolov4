@@ -12,6 +12,9 @@ from terminaltables import AsciiTable
 import os, sys, time, datetime, argparse
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 import torch
 
 import tqdm
