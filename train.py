@@ -224,8 +224,8 @@ def main():
     finalmap.append(AP.mean())
     finalepoch.append(epoch)
     ax.plot(finalepoch,finalmap)
-    plt.savefig ('chart.png')
-    plt.show()
+    plt.savefig ("chart.png")
+    
     """
     # Save checkpoint
     if max_mAP_new > max_mAP_max:
