@@ -206,7 +206,7 @@ def main():
         }
 
          # Print class APs and mAP
-         ap_table = [["Index", "Class name", "AP"]]
+        ap_table = [["Index", "Class name", "AP"]]
         for i, c in enumerate(ap_class):
             ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
         print(AsciiTable(ap_table).table)
