@@ -14,6 +14,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 import numpy as np
 import matplotlib.pyplot as plt
+'exec(%matplotlib inline)'
 
 import torch
 
