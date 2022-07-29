@@ -113,6 +113,7 @@ def main():
         idx_cnt += 1
     """
     finalmap=[]
+    finalepoch=[]
     for epoch in range(0, configs.num_epochs, 1):
         
         num_iters_per_epoch = len(train_dataloader)
@@ -208,8 +209,9 @@ def main():
     #-------------------------------------------------------------------------------------
     # plot
     #-------------------------------------------------------------------------------------   
-        finalmap.append(AP.mean())
-        plt.plot(epoch,finalmap)
+        finalmap.append((AP.mean()*100))
+        finalepoch.append(AP.mean())
+        plt.plot(finalepoch,finalmap)
         plt.show()
         
     # Print class APs and mAP
