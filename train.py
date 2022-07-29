@@ -220,10 +220,10 @@ def main():
     # plot
     #-------------------------------------------------------------------------------------   
    
-    fig, ax = plt.subplots(figsize=(10,6))
+    
     finalmap.append(AP.mean())
     finalepoch.append(epoch)
-    ax.plot(finalepoch,finalmap)
+    plt.plot(finalepoch,finalmap)
     plt.savefig ("chart.png")
     
     """
