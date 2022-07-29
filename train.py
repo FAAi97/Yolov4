@@ -208,6 +208,9 @@ def main():
         }
         print(f"---- mAP {AP.mean()}")  
        
+        finalmap.append(AP.mean())
+        finalepoch.append(epoch)
+        
     # Print class APs and mAP
     ap_table = [["Index", "Class name", "AP"]]
     for i, c in enumerate(ap_class):
@@ -219,10 +222,7 @@ def main():
     #-------------------------------------------------------------------------------------
     # plot
     #-------------------------------------------------------------------------------------   
-   
-    
-    finalmap.append(AP.mean())
-    finalepoch.append(epoch)
+ 
     print(f"----finalmap {finalmap}")
     print(f"----finalepoch {finalepoch}")
     plt.plot(finalepoch,finalmap)
