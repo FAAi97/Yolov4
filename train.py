@@ -189,38 +189,38 @@ def main():
         torch.save(model.state_dict(), configs.save_path)
         print("Epoch :", epoch+1,'save a checkpoint at {}'.format(configs.save_path))    
         
-    #-------------------------------------------------------------------------------------  
-    # Evaulation        
-    #-------------------------------------------------------------------------------------
-    # if (epoch+1) % 4 == 0 and (epoch+1) >= 2:
-    print("\n---- Evaluating Model ----")
-    val_dataloader = create_val_dataloader(configs)
-    precision, recall, AP, f1, ap_class = evaluate_mAP(val_dataloader, model, configs)
+         #-------------------------------------------------------------------------------------  
+        # Evaulation        
+        #-------------------------------------------------------------------------------------
+        # if (epoch+1) % 4 == 0 and (epoch+1) >= 2:
+        print("\n---- Evaluating Model ----")
+        val_dataloader = create_val_dataloader(configs)
+        precision, recall, AP, f1, ap_class = evaluate_mAP(val_dataloader, model, configs)
 
-    val_metrics_dict = {
-        'precision': precision.mean(),
-        'recall': recall.mean(),
-        'AP': AP.mean(),
-        'f1': f1.mean(),
-        'ap_class': ap_class.mean()
-    }
+        val_metrics_dict = {
+            'precision': precision.mean(),
+            'recall': recall.mean(),
+            'AP': AP.mean(),
+            'f1': f1.mean(),
+            'ap_class': ap_class.mean()
+        }
 
-    # Print class APs and mAP
-    ap_table = [["Index", "Class name", "AP"]]
-    for i, c in enumerate(ap_class):
-        ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
-    print(AsciiTable(ap_table).table)
-    print(f"---- mAP {AP.mean()}")
+         # Print class APs and mAP
+         ap_table = [["Index", "Class name", "AP"]]
+        for i, c in enumerate(ap_class):
+            ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
+        print(AsciiTable(ap_table).table)
+        print(f"---- mAP {AP.mean()}")
 
-    max_mAP_new = AP.mean()
+        max_mAP_new = AP.mean()
     #-------------------------------------------------------------------------------------
     # plot
     #-------------------------------------------------------------------------------------
 
-    finalmap=[]
-    finalmap.append(max_mAP_new)
-    plt.plot(epoch,finalmap)
-    plt.show()
+        finalmap=[]
+        finalmap.append(max_mAP_new)
+        plt.plot(epoch,finalmap)
+        plt.show()
     """
     # Save checkpoint
     if max_mAP_new > max_mAP_max:
