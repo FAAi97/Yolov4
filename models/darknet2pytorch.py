@@ -5,8 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
-from fpdf import FPDF
-import fpdf
+
 sys.path.append('../')
 from models.yolo_layer import YoloLayer
 from models.darknet_utils import parse_cfg, print_cfg, load_fc, load_conv_bn, load_conv
@@ -401,10 +400,7 @@ class Darknet(nn.Module):
         return yolo_outputs if targets is None else (loss, yolo_outputs)
 
     def print_network(self):
-         print_cfg(self.blocks)
-
-     
-
+        print_cfg(self.blocks)
 
     """Parses and loads the weights stored in 'weights_path'"""
     def load_darknet_weights(self, weights_path):
