@@ -209,9 +209,10 @@ def main():
     #-------------------------------------------------------------------------------------
     # plot
     #-------------------------------------------------------------------------------------   
-        finalmap.append((AP.mean()*100))
-        finalepoch.append(AP.mean())
-        plt.plot(finalepoch,finalmap)
+        fig, ax = plt.subplots(figsize=(10,6))
+        finalmap.append(AP.mean())
+        ax.plot(epoch,finalmap)
+        plt.savefig ('chart.png')
         plt.show()
         
     # Print class APs and mAP
