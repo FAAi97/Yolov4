@@ -223,6 +223,8 @@ def main():
     
     finalmap.append(AP.mean())
     finalepoch.append(epoch)
+    print(f"----finalmap {finalmap}")
+    print(f"----finalepoch {finalepoch}")
     plt.plot(finalepoch,finalmap)
     plt.savefig ("chart.png")
     
