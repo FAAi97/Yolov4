@@ -223,11 +223,16 @@ def main():
     # plot
     #-------------------------------------------------------------------------------------   
  
-    print(f"----finalmap {finalmap}")
-    print(f"----finalepoch {finalepoch}")
-    plt.plot(finalepoch,finalmap)
+    plt.xlabel("Lable")
+    plt.ylabel('mAP')
+    plt.ylim(0,1)
+    plt.plot(finalepoch,finalmap,marker='o',ms=4,mfc='r',mec='r',linewidth=0.8)
+    for x,y in enumerate(finalmap): 
+         y=round(y,2)
+         plt.text(x,y,str(y),fontsize=10)
     plt.savefig ("chart.png")
-    
+    plt.show()
+
     """
     # Save checkpoint
     if max_mAP_new > max_mAP_max:
