@@ -216,8 +216,8 @@ def main():
     finalmap=[]
     finalmap.append(max_mAP_new)
     plt.plot(finalmap)
-    plt.axis(False)
-    plt.imshow()
+#     plt.axis(False)
+    plt.show()
     #-------------------------------------------------------------------------------------
 
     """
