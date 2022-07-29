@@ -206,24 +206,25 @@ def main():
             'ap_class': ap_class.mean()
         }
         print(f"---- mAP {AP.mean()}")  
-    #-------------------------------------------------------------------------------------
-    # plot
-    #-------------------------------------------------------------------------------------   
-        fig, ax = plt.subplots(figsize=(10,6))
-        finalmap.append(AP.mean())
-        ax.plot(epoch,finalmap)
-        plt.savefig ('chart.png')
-        plt.show()
-        
+       
     # Print class APs and mAP
     ap_table = [["Index", "Class name", "AP"]]
     for i, c in enumerate(ap_class):
         ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
     print(AsciiTable(ap_table).table)
     print(f"---- mAP {AP.mean()}")
-
     max_mAP_new = AP.mean()
- 
+    
+    #-------------------------------------------------------------------------------------
+    # plot
+    #-------------------------------------------------------------------------------------   
+   
+    fig, ax = plt.subplots(figsize=(10,6))
+    finalmap.append(AP.mean())
+    finalepoch.append(epoch)
+    ax.plot(finalepoch,finalmap)
+    plt.savefig ('chart.png')
+    plt.show()
     """
     # Save checkpoint
     if max_mAP_new > max_mAP_max:
