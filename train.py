@@ -215,7 +215,7 @@ def main():
             'ap_class': ap_class.mean()
         }
         print(f"---- mAP {AP.mean()}")  
-       
+        print(f"---- loss {lossmean_epoch}")
         finalmap.append(AP.mean())
         finalepoch.append(epoch)
       
@@ -229,7 +229,7 @@ def main():
         ap_table += [[c, class_names[c], "%.4f" % AP[i], "%.4f" % f1[c],"%.4f" % recall[c]]]
     print(AsciiTable(ap_table).table)
     print(f"---- mAP {AP.mean()}")
-    print(f"---- loss {lossmean_epoch}")
+    print(f"---- Floss {lossmean_epoch}")
     max_mAP_new = AP.mean()
    
     #-------------------------------------------------------------------------------------
