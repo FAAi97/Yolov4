@@ -191,11 +191,11 @@ def main():
         
         torch.save(model.state_dict(), configs.save_path)
         print("Epoch :", epoch+1,'save a checkpoint at {}'.format(configs.save_path))    
-       
+      
         #-------------------------------------------------------------------------------------  
         # Evaulation loss epoch      
         #-------------------------------------------------------------------------------------   
-	print(loss_epoch)
+	      
         lossmean_epoch=Average(loss_epoch)
         print("lossmean_epoch :", lossmean_epoch)
         loss_mean.append(lossmean_epoch)
@@ -235,7 +235,7 @@ def main():
     # Evaulation loss      
     #------------------------------------------------------------------------------------- 
     lossAverage=Average(loss_mean)
-    print("lossmean_epoch :",  lossAverag)
+    print("lossmean_epoch :",lossAverage)
     
     
     #-------------------------------------------------------------------------------------
