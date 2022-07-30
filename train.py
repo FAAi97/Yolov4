@@ -17,7 +17,6 @@ import matplotlib.pyplot as plt
 'exec(%matplotlib inline)'
 
 import torch
-
 import tqdm
 from data_process.kitti_dataloader import create_train_dataloader, create_val_dataloader
 
@@ -115,6 +114,7 @@ def main():
     """
     finalmap=[]
     finalepoch=[]
+    loss_epoch=[]
     loss_mean=[]
     for epoch in range(0, configs.num_epochs, 1):
         
@@ -183,7 +183,7 @@ def main():
 
             else:
                 reduced_loss = total_loss.data
-                loss_mean.append(reduced_loss)
+                loss_epoch.append(reduced_loss)
                                
             # ----------------
             #   Log progress
@@ -191,13 +191,13 @@ def main():
         
         torch.save(model.state_dict(), configs.save_path)
         print("Epoch :", epoch+1,'save a checkpoint at {}'.format(configs.save_path))    
+       
         #-------------------------------------------------------------------------------------  
-        # Evaulation loss       
-        #-------------------------------------------------------------------------------------
-        
-        losskol=loss_mean.mean();     
-        print("losskol :", losskol)
-        
+        # Evaulation loss epoch      
+        #-------------------------------------------------------------------------------------      
+        lossmean_epoch=Average(loss_epoch)
+        print("lossmean_epoch :", lossmean_epoch)
+        loss_mean.append(lossmean_epoch)
         #-------------------------------------------------------------------------------------  
         # Evaulation        
         #-------------------------------------------------------------------------------------
@@ -217,7 +217,10 @@ def main():
        
         finalmap.append(AP.mean())
         finalepoch.append(epoch)
-        
+      
+    
+    #-----epoch end-----#
+
     # Print class APs and mAP
     ap_table = [["Index", "Class name", "AP"]]
     for i, c in enumerate(ap_class):
@@ -225,6 +228,14 @@ def main():
     print(AsciiTable(ap_table).table)
     print(f"---- mAP {AP.mean()}")
     max_mAP_new = AP.mean()
+   
+
+    #-------------------------------------------------------------------------------------  
+    # Evaulation loss      
+    #------------------------------------------------------------------------------------- 
+    lossAverage=Average(lossmean)
+    print("lossmean_epoch :",  lossAverag)
+    
     
     #-------------------------------------------------------------------------------------
     # plot
@@ -250,7 +261,9 @@ def main():
         model.load_state_dict(torch.load(configs.pretrained_path))
         print("Max mAP weight will be used again!")
     """
-            
+def Average(lst):
+	return sum(lst) / len(lst) 
+
 if __name__ == '__main__':
     main()
     
