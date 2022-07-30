@@ -183,8 +183,8 @@ def main():
 
             else:
                 reduced_loss = total_loss.data
-                loss_epoch.append(reduced_loss)
-                               
+                loss_epoch.append(reduced_loss.item())
+
             # ----------------
             #   Log progress
             # ----------------
@@ -237,11 +237,11 @@ def main():
     lossAverage=Average(loss_mean)
     print("lossmean_epoch :",lossAverage)
     
-    
     #-------------------------------------------------------------------------------------
     # plot
     #-------------------------------------------------------------------------------------   
-    finalmap=finalmap*100
+    
+    finalmap=[element * 100 for element in finalmap]    
     plt.xlabel("Lable")
     plt.ylabel('mAP')
     plt.ylim(0,100)
