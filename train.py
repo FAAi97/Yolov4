@@ -115,6 +115,7 @@ def main():
     """
     finalmap=[]
     finalepoch=[]
+    loss_mean=[]
     for epoch in range(0, configs.num_epochs, 1):
         
         num_iters_per_epoch = len(train_dataloader)
@@ -182,16 +183,22 @@ def main():
 
             else:
                 reduced_loss = total_loss.data
-                print("reduced_loss :", reduced_loss)
-                
+                loss_mean.append(reduced_loss)
+                               
             # ----------------
             #   Log progress
             # ----------------
         
         torch.save(model.state_dict(), configs.save_path)
         print("Epoch :", epoch+1,'save a checkpoint at {}'.format(configs.save_path))    
+        #-------------------------------------------------------------------------------------  
+        # Evaulation loss       
+        #-------------------------------------------------------------------------------------
         
-         #-------------------------------------------------------------------------------------  
+        losskol=loss_mean.mean();     
+        print("losskol :", losskol)
+        
+        #-------------------------------------------------------------------------------------  
         # Evaulation        
         #-------------------------------------------------------------------------------------
         # if (epoch+1) % 4 == 0 and (epoch+1) >= 2:
