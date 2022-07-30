@@ -249,6 +249,7 @@ def main():
     for x,y in enumerate(finalmap): 
          y=round(y,2)
          plt.text(x,y,str(y),fontsize=10)
+    plt.plot(finalepoch,loss_mean)
     plt.savefig ("chart.png")
     plt.show()
 
