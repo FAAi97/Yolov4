@@ -195,7 +195,7 @@ def main():
         #-------------------------------------------------------------------------------------  
         # Evaulation loss epoch      
         #-------------------------------------------------------------------------------------   
-	print(str(loss_epoch))
+	print(loss_epoch)
         lossmean_epoch=Average(loss_epoch)
         print("lossmean_epoch :", lossmean_epoch)
         loss_mean.append(lossmean_epoch)
