@@ -241,10 +241,10 @@ def main():
     #-------------------------------------------------------------------------------------
     # plot
     #-------------------------------------------------------------------------------------   
- 
+    finalmap=finalmap*100
     plt.xlabel("Lable")
     plt.ylabel('mAP')
-    plt.ylim(0,1)
+    plt.ylim(0,100)
     plt.plot(finalepoch,finalmap,marker='o',ms=4,mfc='r',mec='r',linewidth=0.8)
     for x,y in enumerate(finalmap): 
          y=round(y,2)
