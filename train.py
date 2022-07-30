@@ -222,21 +222,16 @@ def main():
     
     #-----epoch end-----#
 
+  
     # Print class APs and mAP
-    ap_table = [["Index", "Class name", "AP"]]
+    ap_table = [["Index", "Class name", "AP",'f1_score','recall']]
     for i, c in enumerate(ap_class):
-        ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
+        ap_table += [[c, class_names[c], "%.4f" % AP[i], "%.4f" % f1[c],"%.4f" % recall[c]]]
     print(AsciiTable(ap_table).table)
     print(f"---- mAP {AP.mean()}")
+    print(f"---- loss {Average(loss_mean)}")
     max_mAP_new = AP.mean()
    
-
-    #-------------------------------------------------------------------------------------  
-    # Evaulation loss      
-    #------------------------------------------------------------------------------------- 
-    lossAverage=Average(loss_mean)
-    print("lossmean_epoch :",lossAverage)
-    
     #-------------------------------------------------------------------------------------
     # plot
     #-------------------------------------------------------------------------------------   
