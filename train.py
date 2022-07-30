@@ -226,7 +226,8 @@ def main():
     # Print class APs and mAP
     ap_table = [["Index", "Class name", "AP",'f1_score','recall']]
     for i, c in enumerate(ap_class):
-        ap_table += [[c, class_names[c], "%.4f" % AP[i], "%.4f" % f1[c],"%.4f" % recall[c]]]
+      ap_table += [[c, class_names[c-1], "%.4f" % AP[i], "%.4f" % f1[c-1],"%.4f" % recall[c-1]]]
+    
     print(AsciiTable(ap_table).table)
     print(f"---- mAP {AP.mean()}")
     print(f"---- Floss {lossmean_epoch}")
