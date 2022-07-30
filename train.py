@@ -233,7 +233,7 @@ def main():
     max_mAP_new = AP.mean()
    
     #-------------------------------------------------------------------------------------
-    # plot
+    # plot1
     #-------------------------------------------------------------------------------------   
     
     finalmap=[element * 100 for element in finalmap]    
@@ -245,8 +245,34 @@ def main():
          y=round(y,2)
          plt.text(x,y,str(y),fontsize=10)
     plt.plot(finalepoch,loss_mean)
-    plt.savefig ("chart.png")
+    plt.savefig ("Map_chart.png")
     plt.show()
+    #-------------------------------------------------------------------------------------
+    # plot2
+    #-------------------------------------------------------------------------------------   
+    labels =class_names
+    # m_AP = AP
+    # f1 = f1
+    # Recall= recall
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.2  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width, AP, width, color = '#EEDFCC', label='AP')
+    rects2 = ax.bar(x , f1, width,color = '#CD5B45', label='F1')
+    rects2 = ax.bar(x + width, recall, width,color = '#00BFFF', label='Recall')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    fig.tight_layout()
+    plt.savefig ("class_chart.png")
+    plt.show()
+   
+
 
     """
     # Save checkpoint
