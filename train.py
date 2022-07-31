@@ -263,6 +263,7 @@ def main():
     rects1 = ax.bar(x - width, AP, width, color = '#EEDFCC', label='AP')
     rects2 = ax.bar(x , f1, width,color = '#CD5B45', label='F1')
     rects2 = ax.bar(x + width, recall, width,color = '#00BFFF', label='Recall')
+    plt.ylim([0,1])
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_xticks(x)
