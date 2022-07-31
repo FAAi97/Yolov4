@@ -242,9 +242,9 @@ def main():
     plt.ylabel('mAP')
     plt.ylim(0,100)
     plt.plot(finalepoch,finalmap,marker='o',ms=4,mfc='r',mec='r',linewidth=0.8)
-    for x,y in enumerate(finalmap): 
-         y=round(y,2)
-         plt.text(x,y,str(y),fontsize=10)
+	#     for x,y in enumerate(finalmap): 
+	#          y=round(y,2)
+    #          plt.text(x,y,str(y),fontsize=10)
     plt.plot(finalepoch,loss_mean)
     plt.savefig ("Map_chart.png")
     plt.show()
