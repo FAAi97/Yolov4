@@ -179,7 +179,7 @@ class YoloLayer(nn.Module):
         pred_boxes[..., 1] = pred_y + self.grid_y
         pred_boxes[..., 2] = torch.exp(pred_w).clamp(max=1E3) * self.anchor_w
         pred_boxes[..., 3] = torch.exp(pred_h).clamp(max=1E3) * self.anchor_h
-        pred_boxes[..., self.num_b_b_attr-3] = pred_im
+        pred_boxes[..., self.num_b_b_attr-3] = pred_im 
         pred_boxes[..., self.num_b_b_attr-2] = pred_re
 
         output = torch.cat(
@@ -211,9 +211,9 @@ class YoloLayer(nn.Module):
             loss_h = F.mse_loss(pred_h[obj_mask], th[obj_mask], reduction=self.reduction)
             loss_im = F.mse_loss(pred_im[obj_mask], tim[obj_mask], reduction=self.reduction)
             loss_re = F.mse_loss(pred_re[obj_mask], tre[obj_mask], reduction=self.reduction)
-            loss_im_re = (1. - torch.sqrt(pred_im[obj_mask] ** 2 + pred_re[obj_mask] ** 2)) ** 2  # as tim^2 + tre^2 = 1
-            loss_im_re_red = loss_im_re.sum() if self.reduction == 'sum' else loss_im_re.mean()
-            loss_eular = loss_im + loss_re + loss_im_re_red
+            # loss_im_re = (1. - torch.sqrt(pred_im[obj_mask] ** 2 + pred_re[obj_mask] ** 2)) ** 2  # as tim^2 + tre^2 = 1
+            # loss_im_re_red = loss_im_re.sum() if self.reduction == 'sum' else loss_im_re.mean()
+            # loss_eular = loss_im + loss_re + loss_im_re_red
 
             loss_conf_obj = F.binary_cross_entropy(pred_conf[obj_mask], tconf[obj_mask], reduction=self.reduction)
             loss_conf_noobj = F.binary_cross_entropy(pred_conf[noobj_mask], tconf[noobj_mask], reduction=self.reduction)
@@ -221,10 +221,10 @@ class YoloLayer(nn.Module):
 
             if self.use_giou_loss:
                 loss_obj = loss_conf_obj + loss_conf_noobj
-                total_loss = giou_loss * self.lgiou_scale + loss_eular * self.leular_scale + loss_obj * self.lobj_scale + loss_cls * self.lcls_scale
+                # total_loss = giou_loss * self.lgiou_scale + * self.leular_scale + loss_obj * self.lobj_scale + loss_cls * self.lcls_scale
             else:
                 loss_obj = self.obj_scale * loss_conf_obj + self.noobj_scale * loss_conf_noobj
-                total_loss = loss_x + loss_y + loss_w + loss_h + loss_eular + loss_obj + loss_cls
+                total_loss = loss_x + loss_y + loss_w + loss_h + loss_obj + loss_cls
 
             # Metrics (store loss values using tensorboard)
             cls_acc = 100 * class_mask[obj_mask].mean()
