@@ -163,7 +163,7 @@ class YoloLayer(nn.Module):
         pred_y = torch.sigmoid(prediction[..., 1])  # Center y
         pred_w = prediction[..., 2]  # Width
         pred_h = prediction[..., 3]  # Height
-        pred_im = prediction[..., self.num_b_b_attr-3]  # angle imaginary part (range: 0 to 1)
+        pred_z = prediction[..., self.num_b_b_attr-3]  # angle imaginary part (range: 0 to 1)
         pred_re = prediction[..., self.num_b_b_attr-2]  # angle real part (range: 0 to 1)
         pred_conf = torch.sigmoid(prediction[..., self.num_b_b_attr-1])  # Conf
         pred_cls = torch.sigmoid(prediction[..., self.num_b_b_attr:])  # Cls pred.
@@ -179,7 +179,7 @@ class YoloLayer(nn.Module):
         pred_boxes[..., 1] = pred_y + self.grid_y
         pred_boxes[..., 2] = torch.exp(pred_w).clamp(max=1E3) * self.anchor_w
         pred_boxes[..., 3] = torch.exp(pred_h).clamp(max=1E3) * self.anchor_h
-        pred_boxes[..., self.num_b_b_attr-3] = pred_im 
+        pred_boxes[..., self.num_b_b_attr-3] = pred_z
         pred_boxes[..., self.num_b_b_attr-2] = pred_re
 
         output = torch.cat(
@@ -197,7 +197,7 @@ class YoloLayer(nn.Module):
             return output, 0
         else:
             self.reduction = 'mean'
-            iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tim, tre, tcls, tconf = self.build_targets(
+            iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tz, tre, tcls, tconf = self.build_targets(
                 pred_boxes=pred_boxes,
                 pred_cls=pred_cls,
                 target=targets,
@@ -207,9 +207,10 @@ class YoloLayer(nn.Module):
 
             loss_x = F.mse_loss(pred_x[obj_mask], tx[obj_mask], reduction=self.reduction)
             loss_y = F.mse_loss(pred_y[obj_mask], ty[obj_mask], reduction=self.reduction)
+            loss_z = F.mse_loss(pred_z[obj_mask], tz[obj_mask], reduction=self.reduction)
             loss_w = F.mse_loss(pred_w[obj_mask], tw[obj_mask], reduction=self.reduction)
             loss_h = F.mse_loss(pred_h[obj_mask], th[obj_mask], reduction=self.reduction)
-            loss_im = F.mse_loss(pred_im[obj_mask], tim[obj_mask], reduction=self.reduction)
+            # loss_im = F.mse_loss(pred_im[obj_mask], tim[obj_mask], reduction=self.reduction)
             loss_re = F.mse_loss(pred_re[obj_mask], tre[obj_mask], reduction=self.reduction)
             # loss_im_re = (1. - torch.sqrt(pred_im[obj_mask] ** 2 + pred_re[obj_mask] ** 2)) ** 2  # as tim^2 + tre^2 = 1
             # loss_im_re_red = loss_im_re.sum() if self.reduction == 'sum' else loss_im_re.mean()
@@ -224,7 +225,7 @@ class YoloLayer(nn.Module):
                 # total_loss = giou_loss * self.lgiou_scale + * self.leular_scale + loss_obj * self.lobj_scale + loss_cls * self.lcls_scale
             else:
                 loss_obj = self.obj_scale * loss_conf_obj + self.noobj_scale * loss_conf_noobj
-                total_loss = loss_x + loss_y + loss_w + loss_h + loss_obj + loss_cls
+                total_loss = loss_x + loss_y + loss_w + loss_h + loss_z + loss_obj + loss_cls
 
             # Metrics (store loss values using tensorboard)
             cls_acc = 100 * class_mask[obj_mask].mean()
@@ -244,7 +245,8 @@ class YoloLayer(nn.Module):
                 "loss_y": to_cpu(loss_y).item(),
                 "loss_w": to_cpu(loss_w).item(),
                 "loss_h": to_cpu(loss_h).item(),
-                "loss_im": to_cpu(loss_im).item(),
+                "loss_z": to_cpu(loss_z).item(),
+                # "loss_im": to_cpu(loss_im).item(),
                 "loss_re": to_cpu(loss_re).item(),
                 "loss_obj": to_cpu(loss_obj).item(),
                 "loss_cls": to_cpu(loss_cls).item(),
