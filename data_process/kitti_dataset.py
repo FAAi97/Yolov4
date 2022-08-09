@@ -108,7 +108,7 @@ class KittiDataset(Dataset):
 
         lidarData = kitti_bev_utils.removePoints(lidarData, cnf.boundary)
         rgb_map = kitti_bev_utils.makeBVFeature(lidarData, cnf.DISCRETIZATION, cnf.boundary)
-        target = kitti_bev_utils.build_yolo_target(labels)
+        target = kitti_bev_utils.build_yolo_target(labels)# kitti2yolo
         img_file = os.path.join(self.image_dir, '{:06d}.png'.format(sample_id))
 
         # on image space: targets are formatted as (box_idx, class, x, y, w, l, im, re)
