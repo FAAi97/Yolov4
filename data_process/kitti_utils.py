@@ -34,8 +34,6 @@ class Object3d(object):
         self.level_str = None
         self.level = self.get_obj_level()
 
- 
-
     def cls_type_to_id(self, cls_type):
         # Car and Van ==> Car class
         # Pedestrian and Person_Sitting ==> Pedestrian Class
@@ -82,8 +80,6 @@ class Object3d(object):
                        self.box2d[2], self.box2d[3], self.h, self.w, self.l, self.t[0], self.t[1], self.t[2],
                        self.ry, self.score)
         return kitti_str
-    def loc_object(self):
-        return(self.t[0], self.t[1], self.t[2], self.ry) #3d bbox location, ry
 
 class Calibration(object):
     ''' Calibration matrices and utils
@@ -299,10 +295,9 @@ def inverse_rigid_trans(Tr):
     inv_Tr[0:3, 3] = np.dot(-np.transpose(Tr[0:3, 0:3]), Tr[0:3, 3])
     return inv_Tr
 
+
 def read_label(label_filename):
     lines = [line.rstrip() for line in open(label_filename)]
-    # if lines=='':
-    #print(label_filename)
     objects = [Object3d(line) for line in lines]
     return objects
 
@@ -424,13 +419,10 @@ def draw_projected_box3d(image, qs, color=(255,0,255), thickness=2):
         i, j = k, (k + 1) % 4
         # use LINE_AA for opencv3
         cv2.line(image, (qs[i, 0], qs[i, 1]), (qs[j, 0], qs[j, 1]), color, thickness)
-        
+
         i, j = k + 4, (k + 1) % 4 + 4
         cv2.line(image, (qs[i, 0], qs[i, 1]), (qs[j, 0], qs[j, 1]), color, thickness)
 
         i, j = k, k + 4
         cv2.line(image, (qs[i, 0], qs[i, 1]), (qs[j, 0], qs[j, 1]), color, thickness)
-
-       
-
     return image

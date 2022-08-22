@@ -28,7 +28,7 @@ class KittiDataset(Dataset):
         assert mode in ['train', 'val', 'test'], 'Invalid mode: {}'.format(mode)
         self.mode = mode
         self.is_test = (self.mode == 'test')
-        sub_folder = 'detect_2' if self.is_test else 'training'
+        sub_folder = 'detect_1' if self.is_test else 'training'
 
         self.multiscale = multiscale
         self.lidar_transforms = lidar_transforms
@@ -46,7 +46,7 @@ class KittiDataset(Dataset):
         self.calib_dir = os.path.join(self.dataset_dir, sub_folder, "calib")
         self.label_dir = os.path.join(self.dataset_dir, sub_folder, "label_2")
         if self.is_test:
-            split_txt_path = os.path.join(self.dataset_dir, 'ImageSets', 'detect_2.txt')
+            split_txt_path = os.path.join(self.dataset_dir, 'ImageSets', 'detect_1.txt')
         else :
             split_txt_path = os.path.join(self.dataset_dir, 'ImageSets', '{}.txt'.format(mode))
             
@@ -99,21 +99,21 @@ class KittiDataset(Dataset):
         calib = self.get_calib(sample_id)
 
         labels, noObjectLabels = kitti_bev_utils.read_labels_for_bevbox(objects)
-
+        # convert rect cam to velo cord
         if not noObjectLabels:
-            labels[:, 1:] = kitti_aug_utils.camera_to_lidar_box(labels[:, 1:], calib.V2C, calib.R0, calib.P)  # convert rect cam to velo cord
+            labels[:, 1:] = kitti_aug_utils.camera_to_lidar_box(labels[:, 1:], calib.V2C, calib.R0, calib.P)
 
         if self.lidar_transforms is not None:
             lidarData, labels[:, 1:] = self.lidar_transforms(lidarData, labels[:, 1:])
 
         lidarData = kitti_bev_utils.removePoints(lidarData, cnf.boundary)
         rgb_map = kitti_bev_utils.makeBVFeature(lidarData, cnf.DISCRETIZATION, cnf.boundary)
-        target = kitti_bev_utils.build_yolo_target(labels)# kitti2yolo
+        target = kitti_bev_utils.build_yolo_target(labels)
         img_file = os.path.join(self.image_dir, '{:06d}.png'.format(sample_id))
 
-        # on image space: targets are formatted as (box_idx, class, x, y, w, l, im, re)
+        # on image space: targets are formatted as (box_idx, class, x, y, z, h, w, l, im, re)
         n_target = len(target)
-        targets = torch.zeros((n_target, 8))
+        targets = torch.zeros((n_target, 10))
         if n_target > 0:
             targets[:, 1:] = torch.from_numpy(target)
 

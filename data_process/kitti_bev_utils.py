@@ -61,7 +61,7 @@ def makeBVFeature(PointCloud_, Discretization, bc):
     _, indices, counts = np.unique(PointCloud[:, 0:2], axis=0, return_index=True, return_counts=True)
     PointCloud_top = PointCloud[indices]
 
-    normalizedCounts = np.minimum(1.0, np.log(counts + 1) / np.log(64))#pomega
+    normalizedCounts = np.minimum(1.0, np.log(counts + 1) / np.log(64))
 
     intensityMap[np.int_(PointCloud_top[:, 0]), np.int_(PointCloud_top[:, 1])] = PointCloud_top[:, 3]
     densityMap[np.int_(PointCloud_top[:, 0]), np.int_(PointCloud_top[:, 1])] = normalizedCounts
@@ -124,16 +124,17 @@ def build_yolo_target(labels):
         # ped and cyc labels are very small, so lets add some factor to height/width
         l = l + 0.3
         w = w + 0.3
-        h = h + 0.3 #add me
-        yaw = np.pi * 2 - yaw
-        if (bc["minX"] < x < bc["maxX"]) and (bc["minY"] < y < bc["maxY"]) and  (bc["minZ"] < z < bc["maxZ"]):
+        yaw = - yaw
+        if (bc["minX"] < x < bc["maxX"]) and (bc["minY"] < y < bc["maxY"]):
             y1 = (y - bc["minY"]) / (bc["maxY"] - bc["minY"])  # we should put this in [0,1], so divide max_size  80 m
             x1 = (x - bc["minX"]) / (bc["maxX"] - bc["minX"])  # we should put this in [0,1], so divide max_size  40 m
-            z1 = (z - bc["minZ"]) / (bc["maxZ"] - bc["minZ"])  # add me
+            z1 = (z - bc["minZ"]) / (bc["maxZ"] - bc["minZ"])
+            h1 = h / (bc["maxZ"] - bc["minZ"])
             w1 = w / (bc["maxY"] - bc["minY"])
             l1 = l / (bc["maxX"] - bc["minX"])
-            h1 = h / (bc["maxZ"] - bc["minZ"]) ## add me
-            target.append([cl, y1, x1, w1, l1, z1, h1])
+
+            # cls, y, x, z, h, w ,l, im, re
+            target.append([cl, y1, x1, z1, h1, w1, l1, math.sin(float(yaw)), math.cos(float(yaw))])
 
     return np.array(target, dtype=np.float32)
 
@@ -141,21 +142,17 @@ def build_yolo_target(labels):
 def inverse_yolo_target(targets, bc):
     labels = []
     for t in targets:
-
-        c, y, x, w, l, im, re = t        
-        z, h = -1.55, 1.5
-        if c == 1: 
-            h = 1.8
-        elif c == 2:
-            h = 1.4
+        c, y, x, z, h, w, l, im, re = t
 
         y = y * (bc["maxY"] - bc["minY"]) + bc["minY"]
         x = x * (bc["maxX"] - bc["minX"]) + bc["minX"]
+        z = z * (bc["maxZ"] - bc["minZ"]) + bc["minZ"]
+        h = h * (bc["maxZ"] - bc["minZ"])
         w = w * (bc["maxY"] - bc["minY"])
         l = l * (bc["maxX"] - bc["minX"])
         w -= 0.3
         l -= 0.3
-        labels.append([c, x, y, z, h, w, l, - np.arctan2(im, re) - 2 * np.pi])
+        labels.append([c, x, y, z, h, w, l, - np.arctan2(im, re)])
 
     return np.array(labels)
 
@@ -166,10 +163,8 @@ def drawRotatedBox(img, x, y, w, l, yaw, color):
     corners_int = bev_corners.reshape(-1, 1, 2).astype(int)
     cv2.polylines(img, [corners_int], True, color, 2)
     corners_int = bev_corners.reshape(-1, 2)
-    # cv2.line(img, (int(corners_int[0, 0]), int(corners_int[0, 1])), (int(corners_int[3, 0]), int(corners_int[3, 1])), (255, 255, 0), 2)
-    cv2.circle(img,(int(x),int(y)), radius=1, color=(255, 255, 255), thickness=-1) 
+    cv2.line(img, (corners_int[0, 0], corners_int[0, 1]), (corners_int[3, 0], corners_int[3, 1]), (255, 255, 0), 2)
 
-   
 
 def draw_box_in_bev(rgb_map, target):
     for j in range(50):

@@ -369,8 +369,8 @@ class Horizontal_Flip(object):
     def __call__(self, img, targets):
         if np.random.random() <= self.p:
             img = torch.flip(img, [-1])
-            targets[:, 2] = 1 - targets[:, 2]  # horizontal flip
-            targets[:, 6] = - targets[:, 6]  # yaw angle flip
+            targets[:, 2] = 1. - targets[:, 2]  # horizontal flip
+            targets[:, -2] = - targets[:, -2]  # yaw angle flip -- flip im
 
         return img, targets
 
