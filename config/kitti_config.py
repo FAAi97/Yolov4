@@ -35,7 +35,7 @@ BEV_HEIGHT = 608  # across x axis 0m ~ 50m
 
 DISCRETIZATION = (boundary["maxX"] - boundary["minX"]) / BEV_HEIGHT
 
-colors = [[0, 255, 255], [204, 204, 255], [100, 149, 237]]
+colors = [[0, 255, 255], [0, 0, 255], [255, 0, 0]]
 
 # Following parameters are calculated as an average from KITTI dataset for simplicity
 #####################################################################################

@@ -5,30 +5,38 @@ import torch
 from easydict import EasyDict as edict
 
 def parse_train_configs():
-    parser = argparse.ArgumentParser(description='The Implementation of Complex YOLOv4')
-    parser.add_argument('--seed', type=int, default=2020, help='re-produce the results with seed random')
+    parser = argparse.ArgumentParser(description='The Implementation of YOLO3D-YOLOv4 using PyTorch')
+    ##############     Model configs            ########################
+    # Yolo3d - Yolov4    
+    parser.add_argument('-a', '--arch', type=str, default='darknet', metavar='ARCH', help='The name of the model architecture')
+    # parser.add_argument('--pretrained_path', type=str, default="checkpoints/yolov4.weights", metavar='PATH', help='the path of the pretrained checkpoint')
+    parser.add_argument('--model_def', type=str, default='config/cfg/yolo3d_yolov4.cfg', metavar='PATH', help='The path for cfgfile (only for darknet)')
+    parser.add_argument('--pretrained_path', type=str, default="checkpoints/Model_yolo3d_yolov4.pth", metavar='PATH', help='the path of the pretrained checkpoint')
+    parser.add_argument('--save_path', type=str, default="checkpoints/Model_yolo3d_yolov4.pth", metavar='PATH', help='the path of the save checkpoint')
     
+    """
+    # Yolo3d - Yolov4 - tiny
+    parser.add_argument('--model_def', type=str, default='config/cfg/yolo3d_yolov4_tiny.cfg', metavar='PATH', help='The path for cfgfile (only for darknet)')
+    # parser.add_argument('--pretrained_path', type=str, default="checkpoints/yolov4-tiny.weights", metavar='PATH', help='the path of the pretrained checkpoint')
+    parser.add_argument('--pretrained_path', type=str, default="checkpoints/Model_yolo3d_yolov4_tiny.pth", metavar='PATH', help='the path of the pretrained checkpoint')
+    parser.add_argument('--save_path', type=str, default="checkpoints/Model_yolo3d_yolov4_tiny.pth", metavar='PATH', help='the path of the save checkpoint')
+    """
+    
+    parser.add_argument('--use_giou_loss', action='store_true', help='If true, use GIoU loss during training. If false, use MSE loss for training')
+    parser.add_argument('--gradient_accumulations', type=int, default=2, help="number of gradient accums before step")
+    parser.add_argument('--evaluation_interval', type=int, default=2, help="interval evaluations on validation set")
+    
+
+    parser.add_argument('--seed', type=int, default=2020, help='re-produce the results with seed random')
     parser.add_argument('--gpu_idx', default=None, type=int, help='GPU index to use.')
     parser.add_argument('--dist_url', default='tcp://127.0.0.1:29500', type=str, help='url used to set up distributed training')
     parser.add_argument('--world_size', default=-1, type=int, metavar='N', help='number of nodes for distributed training')
-    
     parser.add_argument('--working-dir', type=str, default='./', metavar='PATH', help='The ROOT working directory')
     parser.add_argument('--multiprocessing_distributed', action='store_true', help='Use multi-processing distributed training to launch '
                              'N processes per node, which has N GPUs. This is the '
                              'fastest way to use PyTorch for either single node or '
                              'multi node data parallel training')
     
-    ##############     Model configs            ########################
-    
-    parser.add_argument('-a', '--arch', type=str, default='darknet', metavar='ARCH', help='The name of the model architecture')
-    parser.add_argument('--model_def', type=str, default='config/cfg/complex_yolov4.cfg', metavar='PATH', help='The path for cfgfile (only for darknet)')
-    parser.add_argument('--pretrained_path', type=str, default="checkpoints/complex_yolov4_mse_loss.pth", metavar='PATH', help='the path of the pretrained checkpoint')
-    # parser.add_argument('--pretrained_path', type=str, default="checkpoints/Model_complexer_yolo_V4.pth", metavar='PATH', help='the path of the pretrained checkpoint')
-    parser.add_argument('--save_path', type=str, default="checkpoints/Model_complexer_yolo_V4.pth", metavar='PATH', help='the path of the save checkpoint')
-    parser.add_argument('--use_giou_loss', action='store_true', help='If true, use GIoU loss during training. If false, use MSE loss for training')
-    parser.add_argument('--gradient_accumulations', type=int, default=2, help="number of gradient accums before step")
-    parser.add_argument('--evaluation_interval', type=int, default=2, help="interval evaluations on validation set")
-
     ##############     Dataloader and Running configs            #######
 
     parser.add_argument('--img_size', type=int, default=608, help='the size of input image')
@@ -53,12 +61,12 @@ def parse_train_configs():
     ##############     Training strategy            ####################
     
     parser.add_argument('--start_epoch', type=int, default=1, metavar='N', help='the starting epoch')
-    parser.add_argument('--num_epochs', type=int, default=4, metavar='N', help='number of total epochs to run')
+    parser.add_argument('--num_epochs', type=int, default=2, metavar='N', help='number of total epochs to run')
     parser.add_argument('--lr_type', type=str, default='cosin', help='the type of learning rate scheduler (cosin or multi_step)')
-    parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='initial learning rate')
+    parser.add_argument('--lr', type=float, default=0.0025, metavar='LR', help='initial learning rate')
     parser.add_argument('--minimum_lr', type=float, default=1e-7, metavar='MIN_LR', help='minimum learning rate during training')
     parser.add_argument('--momentum', type=float, default=0.949, metavar='M', help='momentum')
-    parser.add_argument('-wd', '--weight_decay', type=float, default=5e-4, metavar='WD', help='weight decay (default: 5e-4)')
+    parser.add_argument('-wd', '--weight_decay', type=float, default=5e-4, metavar='WD', help='weight decay (default: 1e-6)')
     parser.add_argument('--optimizer_type', type=str, default='adam', metavar='OPTIMIZER', help='the type of optimizer, it can be sgd or adam')
     parser.add_argument('--burn_in', type=int, default=50, metavar='N', help='number of burn in step')
     parser.add_argument('--steps', nargs='*', default=[1500, 4000], help='number of burn in step')
@@ -79,15 +87,14 @@ def parse_train_configs():
     parser.add_argument('--conf_thres', type=float, default=0.5, help='for evaluation - the threshold for class conf')
     parser.add_argument('--nms_thres', type=float, default=0.5, help='for evaluation - the threshold for nms')
     parser.add_argument('--iou_thres', type=float, default=0.5, help='for evaluation - the threshold for IoU')
-    parser.add_argument('--saved_fn', type=str, default='complexer_yolo', metavar='FN', help='The name using for saving logs, models,...')
+    parser.add_argument('--saved_fn', type=str, default='yolo3d_yolov4', metavar='FN', help='The name using for saving logs, models,...')
     
 
     configs = edict(vars(parser.parse_args()))
 
     ############## Hardware configurations #############################
 
-    # configs.device = torch.device('cpu' if configs.no_cuda else 'cuda')
-    configs.device= torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    configs.device = torch.device('cpu' if configs.no_cuda else 'cuda')
     configs.ngpus_per_node = torch.cuda.device_count()
     configs.pin_memory = True
 
