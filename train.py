@@ -252,27 +252,27 @@ def main():
     #-------------------------------------------------------------------------------------        
     # if (epoch+1) % 8 == 0:
 
-    print("\n---- Evaluating Model ----")
-    val_dataloader = create_val_dataloader(configs)
-    precision, recall, AP, f1, ap_class = evaluate_mAP(val_dataloader, model, configs)
+        print("\n---- Evaluating Model ----")
+        val_dataloader = create_val_dataloader(configs)
+        precision, recall, AP, f1, ap_class = evaluate_mAP(val_dataloader, model, configs)
 
-    val_metrics_dict = {
-        'precision': precision.mean(),
-        'recall': recall.mean(),
-        'AP': AP.mean(),
-        'f1': f1.mean(),
-        'ap_class': ap_class.mean()
-    }
-
-    # Print class APs and mAP
-    ap_table = [["Index", "Class name", "AP"]]
+        val_metrics_dict = {
+            'precision': precision.mean(),
+            'recall': recall.mean(),
+            'AP': AP.mean(),
+            'f1': f1.mean(),
+            'ap_class': ap_class.mean()
+        }
+        finalmap.append(AP.mean())
+        # Print class APs and mAP
+    ap_table = [["Index", "Class name", "AP",'f1_score','recall']]
     for i, c in enumerate(ap_class):
-        ap_table += [[c, class_names[c], "%.5f" % AP[i]]]
+        ap_table += [[c, class_names[c], "%.4f" % AP[i], "%.4f" % f1[c],"%.4f" % recall[c]]]
     print(AsciiTable(ap_table).table)
     print(f"---- mAP {AP.mean()}")
-    finalmap.append(AP.mean())
+  
     max_mAP = AP.mean()
- #-------------------------------------------------------------------------------------
+    #-------------------------------------------------------------------------------------
     # plot1
     #-------------------------------------------------------------------------------------   
     
