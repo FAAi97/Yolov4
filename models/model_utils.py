@@ -9,6 +9,7 @@ import sys
 import torch
 
 sys.path.append('../')
+
 from models.darknet2pytorch import Darknet
 
 
@@ -71,10 +72,10 @@ if __name__ == '__main__':
     from torchsummary import summary
     from easydict import EasyDict as edict
 
-    parser = argparse.ArgumentParser(description='Complexer YOLO Implementation')
+    parser = argparse.ArgumentParser(description='YOLO3D Implementation')
     parser.add_argument('-a', '--arch', type=str, default='darknet', metavar='ARCH',
                         help='The name of the model architecture')
-    parser.add_argument('--model_def', type=str, default='../config/cfg/complex_yolov4.cfg', metavar='PATH',
+    parser.add_argument('--model_def', type=str, default='../config/cfg/yolo3d_yolov4.cfg', metavar='PATH',
                         help='The path for cfgfile (only for darknet)')
 
     configs = edict(vars(parser.parse_args()))

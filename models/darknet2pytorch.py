@@ -1,3 +1,8 @@
+"""
+# -*- coding: utf-8 -*-
+-----------------------------------------------------------------------------------
+# Refer: https://github.com/Tianxiaomo/pytorch-YOLOv4
+"""
 import sys
 
 import torch
@@ -160,18 +165,13 @@ def create_network(blocks):
             anchor_masks = [int(i) for i in block["mask"].split(",")]
             # Extract anchors
             anchors = [float(i) for i in block["anchors"].split(",")]
-            anchors = [(anchors[i], anchors[i + 1], math.sin(anchors[i + 2]), math.cos(anchors[i + 2])) for i in
-                       range(0, len(anchors), 3)]
+            anchors = [(anchors[i], anchors[i + 1], anchors[i + 2], math.sin(anchors[i + 3]), math.cos(anchors[i + 3])) for
+                i in range(0, len(anchors), 4)]
             anchors = [anchors[i] for i in anchor_masks]
             num_classes = int(block["classes"])
             # self.num_classes = num_classes
             # scale_x_y = float(block["scale_x_y"])
             ignore_thresh = float(block["ignore_thresh"])
-            
-            # print("stride :", stride)
-            # print("ignore_thresh :", ignore_thresh)
-            # import sys
-            # sys.exit()
 
             yolo_layer = YoloLayer( anchors=anchors, num_classes=num_classes,stride=prev_stride,
                                    ignore_thresh=ignore_thresh)
@@ -325,12 +325,6 @@ class Darknet(nn.Module):
         self.seen = 0
 
     def forward(self, x, targets=None):
-        
-        # print("self.height :",self.height)
-        # import sys
-        # sys.exit()
-        
-        
         # batch_size, c, h, w
         img_size = x.size(2)
         ind = -2
