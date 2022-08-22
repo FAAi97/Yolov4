@@ -1,13 +1,13 @@
 from __future__ import division
+import sys
 import tqdm
 import torch
 import numpy as np
 from shapely.geometry import Polygon
 
-import sys
 sys.path.append('../')
 
-import data_process.kitti_bev_utils as bev_utils
+from utils.iou_rotated_boxes_utils import iou_rotated_single_vs_multi_boxes, get_corners_3d
 
 
 def cvt_box_2_polygon(box):
@@ -20,7 +20,7 @@ def cvt_box_2_polygon(box):
     return Polygon([(box[i, 0], box[i, 1]) for i in range(len(box))]).buffer(0)
 
 
-def compute_iou_nms(idx_self, idx_other, polygons, areas):
+def compute_iou_nms(idx_self, idx_other, polygons, volumes, hs):
     """Calculates IoU of the given box with the array of the given boxes.
     box: a polygon
     boxes: a vector of polygons
@@ -32,8 +32,10 @@ def compute_iou_nms(idx_self, idx_other, polygons, areas):
     box1 = polygons[idx_self]
     for idx in idx_other:
         box2 = polygons[idx]
-        intersection = box1.intersection(box2).area
-        iou = intersection / (areas[idx] + areas[idx_self] - intersection + 1e-12)
+        inter_area = box1.intersection(box2).area
+        min_h = min(hs[idx], hs[idx_self])
+        inter_volume = inter_area * min_h
+        iou = inter_volume / (volumes[idx] + volumes[idx_self] - inter_volume + 1e-12)
         ious.append(iou)
 
     return np.array(ious, dtype=np.float32)
@@ -163,8 +165,8 @@ def get_batch_statistics_rotated_bbox(outputs, targets, iou_threshold):
             continue
 
         output = outputs[sample_i]
-        pred_boxes = output[:, :6]
-        pred_scores = output[:, 6]
+        pred_boxes = output[:, :8]
+        pred_scores = output[:, 8]
         pred_labels = output[:, -1]
 
         true_positives = np.zeros(pred_boxes.shape[0])
@@ -185,73 +187,16 @@ def get_batch_statistics_rotated_bbox(outputs, targets, iou_threshold):
                 if pred_label not in target_labels:
                     continue
 
-                iou, box_index = iou_rotated_single_vs_multi_boxes_cpu(pred_box, target_boxes).max(dim=0)
+                iou, box_index = iou_rotated_single_vs_multi_boxes(pred_box, target_boxes).max(dim=0)
 
-                if iou >= iou_threshold and box_index not in detected_boxes:
+                if (iou >= iou_threshold) and (box_index not in detected_boxes):
                     true_positives[pred_i] = 1
                     detected_boxes += [box_index]
         batch_metrics.append([true_positives, pred_scores, pred_labels])
     return batch_metrics
 
 
-def iou_rotated_single_vs_multi_boxes_cpu(single_box, multi_boxes):
-    """
-    :param pred_box: Numpy array
-    :param target_boxes: Numpy array
-    :return:
-    """
-
-    s_x, s_y, s_w, s_l, s_im, s_re = single_box
-    s_area = s_w * s_l
-    s_yaw = np.arctan2(s_im, s_re)
-    s_conners = bev_utils.get_corners(s_x, s_y, s_w, s_l, s_yaw)
-    s_polygon = cvt_box_2_polygon(s_conners)
-
-    m_x, m_y, m_w, m_l, m_im, m_re = multi_boxes.transpose(1, 0)
-    targets_areas = m_w * m_l
-    m_yaw = np.arctan2(m_im, m_re)
-    m_boxes_conners = get_corners_vectorize(m_x, m_y, m_w, m_l, m_yaw)
-    m_boxes_polygons = [cvt_box_2_polygon(box_) for box_ in m_boxes_conners]
-
-    ious = []
-    for m_idx in range(multi_boxes.shape[0]):
-        intersection = s_polygon.intersection(m_boxes_polygons[m_idx]).area
-        iou_ = intersection / (s_area + targets_areas[m_idx] - intersection + 1e-16)
-        ious.append(iou_)
-
-    return torch.tensor(ious, dtype=torch.float)
-
-
-def get_corners_vectorize(x, y, w, l, yaw):
-    """bev image coordinates format - vectorization
-
-    :param x, y, w, l, yaw: [num_boxes,]
-    :return: num_boxes x (x,y) of 4 conners
-    """
-    bbox2 = np.zeros((x.shape[0], 4, 2), dtype=np.float32)
-    cos_yaw = np.cos(yaw)
-    sin_yaw = np.sin(yaw)
-
-    # front left
-    bbox2[:, 0, 0] = x - w / 2 * cos_yaw - l / 2 * sin_yaw
-    bbox2[:, 0, 1] = y - w / 2 * sin_yaw + l / 2 * cos_yaw
-
-    # rear left
-    bbox2[:, 1, 0] = x - w / 2 * cos_yaw + l / 2 * sin_yaw
-    bbox2[:, 1, 1] = y - w / 2 * sin_yaw - l / 2 * cos_yaw
-
-    # rear right
-    bbox2[:, 2, 0] = x + w / 2 * cos_yaw + l / 2 * sin_yaw
-    bbox2[:, 2, 1] = y + w / 2 * sin_yaw - l / 2 * cos_yaw
-
-    # front right
-    bbox2[:, 3, 0] = x + w / 2 * cos_yaw - l / 2 * sin_yaw
-    bbox2[:, 3, 1] = y + w / 2 * sin_yaw + l / 2 * cos_yaw
-
-    return bbox2
-
-
-def nms_cpu(boxes, confs, nms_thresh=0.75):
+def nms_cpu(boxes, confs, nms_thresh=0.5):
     """
     :param boxes: [num, 6]
     :param confs: [num, num_classes]
@@ -262,18 +207,18 @@ def nms_cpu(boxes, confs, nms_thresh=0.75):
     # order of reduce confidence (high --> low)
     order = confs.argsort()[::-1]
 
-    x, y, w, l, im, re = boxes.transpose(1, 0)
+    x, y, z, boxes_h, w, l, im, re = boxes.transpose(1, 0)
     yaw = np.arctan2(im, re)
-    boxes_conners = get_corners_vectorize(x, y, w, l, yaw)
-    boxes_polygons = [cvt_box_2_polygon(box_) for box_ in boxes_conners]  # 4 vertices of the box
-    boxes_areas = w * l
+    boxes_conners = get_corners_3d(x, y, z, boxes_h, w, l, yaw)
+    boxes_polygons = [cvt_box_2_polygon(box_[:4, :2]) for box_ in boxes_conners]  # 4 vertices of the box
+    boxes_volumes = boxes_h * w * l
 
     keep = []
     while order.size > 0:
         idx_self = order[0]
         idx_other = order[1:]
         keep.append(idx_self)
-        over = compute_iou_nms(idx_self, idx_other, boxes_polygons, boxes_areas)
+        over = compute_iou_nms(idx_self, idx_other, boxes_polygons, boxes_volumes, boxes_h)
         inds = np.where(over <= nms_thresh)[0]
         order = order[inds + 1]
 
@@ -325,38 +270,38 @@ def post_processing_v2(prediction, conf_thresh=0.95, nms_thresh=0.4):
     """
         Removes detections with lower object confidence score than 'conf_thres' and performs
         Non-Maximum Suppression to further filter detections.
+        Prediction: x, y, z, h, w, l, im, re, conf, cls
         Returns detections with shape:
-            (x, y, w, l, im, re, object_conf, class_score, class_pred)
+            (x, y, z, h, w, l, im, re, object_conf, class_score, class_pred)
     """
 
     output = [None for _ in range(len(prediction))]
 
     for image_i, image_pred in enumerate(prediction):
         # Filter out confidence scores below threshold
-        image_pred = image_pred[image_pred[:, 6] >= conf_thresh]
+        image_pred = image_pred[image_pred[:, 8] >= conf_thresh]
 
         # If none are remaining => process next image
         if not image_pred.size(0):
             continue
 
         # Object confidence times class confidence
-        score = image_pred[:, 6] * image_pred[:, 7:].max(dim=1)[0]
-
+        score = image_pred[:, 8] * image_pred[:, 9:].max(dim=1)[0]
         # Sort by it
         image_pred = image_pred[(-score).argsort()]
-        class_confs, class_preds = image_pred[:, 7:].max(dim=1, keepdim=True)
-        detections = torch.cat((image_pred[:, :7].float(), class_confs.float(), class_preds.float()), dim=1)
+        class_confs, class_preds = image_pred[:, 9:].max(dim=1, keepdim=True)
+        # detections: (x, y, z, h, w, l, im, re, object_conf, class_score, class_pred)
+        detections = torch.cat((image_pred[:, :9].float(), class_confs.float(), class_preds.float()), dim=1)
         # Perform non-maximum suppression
         keep_boxes = []
         while detections.size(0):
-            # large_overlap = rotated_bbox_iou(detections[0, :6].unsqueeze(0), detections[:, :6], 1.0, False) > nms_thres # not working
-            large_overlap = iou_rotated_single_vs_multi_boxes_cpu(detections[0, :6], detections[:, :6]) > nms_thresh
+            large_overlap = iou_rotated_single_vs_multi_boxes(detections[0, :8], detections[:, :8]) > nms_thresh
             label_match = detections[0, -1] == detections[:, -1]
             # Indices of boxes with lower confidence scores, large IOUs and matching labels
             invalid = large_overlap & label_match
-            weights = detections[invalid, 6:7]
+            weights = detections[invalid, 8:9]
             # Merge overlapping bboxes by order of confidence
-            detections[0, :6] = (weights * detections[invalid, :6]).sum(0) / weights.sum()
+            detections[0, :8] = (weights * detections[invalid, :8]).sum(0) / weights.sum()
             keep_boxes += [detections[0]]
             detections = detections[~invalid]
         if len(keep_boxes) > 0:

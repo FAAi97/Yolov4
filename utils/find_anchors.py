@@ -24,43 +24,51 @@ class Find_Anchors():
         self.image_idx_list = [x.strip() for x in open(split_txt_path).readlines()]
 
         self.sample_id_list = self.remove_invalid_idx(self.image_idx_list)
-        self.boxes_wh = self.load_full_boxes_wh()
+        self.boxes_hwl = self.load_full_boxes_hwl()
         # Take out the total number of boxes
-        self.num_boxes = self.boxes_wh.shape[0]
+        self.num_boxes = self.boxes_hwl.shape[0]
         print("number of sample_id_list: {}, num_boxes: {}".format(len(self.sample_id_list), self.num_boxes))
         # Calculate the polygons and areas
-        self.boxes_conners = np.array([kitti_bev_utils.get_corners(0, 0, b[0], b[1], b[2]) for b in self.boxes_wh])
-        self.boxes_polygons = [self.cvt_box_2_polygon(b) for b in self.boxes_conners]
-        self.boxes_areas = [b.area for b in self.boxes_polygons]
+        self.boxes_h, boxes_w, boxes_l, boxes_yaw = self.boxes_hwl.transpose(1, 0)
+        self.boxes_conners = kitti_bev_utils.get_corners_3d(0, 0, 0, self.boxes_h, boxes_w, boxes_l, boxes_yaw)
+        self.boxes_polygons = [self.cvt_box_2_polygon(b[:4, :2]) for b in self.boxes_conners]
+        self.boxes_volumes = self.boxes_h * boxes_w * boxes_l
         print("Done calculate boxes infor")
 
-    def load_full_boxes_wh(self):
-        boxes_wh = []
+    def load_full_boxes_hwl(self):
+        boxes_hwl = []
         for sample_id in self.sample_id_list:
             targets = self.load_targets(sample_id)
+            # print('targets: {}'.format(targets.shape))
             for target in targets:
-                cls, x, y, w, l, im, re = target
-                if self.use_yaw_label:
-                    yaw = np.arctan2(im, re)
-                else:
+                cls, x, y, z, h, w, l, yaw = target
+                if not self.use_yaw_label:
                     yaw = 0
-                boxes_wh.append([int(w * self.img_size), int(l * self.img_size), yaw])
-        return np.array(boxes_wh)
+                if cls == 2:
+                    boxes_hwl.append([int(h * self.img_size), int(w * self.img_size), int(l * self.img_size), yaw])
+
+        return np.array(boxes_hwl)
 
     def cvt_box_2_polygon(self, box):
         return Polygon([(box[i, 0], box[i, 1]) for i in range(4)])
 
     def compute_iou(self, i):
-        box_polygon, box_area = self.boxes_polygons[i], self.boxes_areas[i]
-        intersections = [box_polygon.intersection(clus_polygon).area for clus_polygon in self.cluster_polygons]
-        iou = [inter / (box_area + area2 - inter + 1e-12) for (area2, inter) in zip(self.cluster_areas, intersections)]
+        box_polygon, box_volume, box_h = self.boxes_polygons[i], self.boxes_volumes[i], self.boxes_h[i]
         # print('done compute_iou')
-        return np.array(iou, dtype=np.float32)
+        ious = []
+        for a_idx in range(self.num_anchors):
+            inter_area = box_polygon.intersection(self.cluster_polygons[a_idx]).area
+            min_h = min(box_h, self.cluster_h[a_idx])
+            inter_volume = min_h * inter_area
+            ious.append(inter_volume / (box_volume + self.cluster_volumes[a_idx] - inter_volume + 1e-16))
+
+        return np.array(ious, dtype=np.float32)
 
     def avg_iou(self):
         return np.mean([np.max(self.compute_iou(i)) for i in range(self.num_boxes)])
 
     def kmeans(self, num_anchors):
+        self.num_anchors = num_anchors
         # The position of each point in each box
         distance = np.empty((self.num_boxes, num_anchors))
 
@@ -70,8 +78,8 @@ class Find_Anchors():
         np.random.seed(0)
 
         # Randomly select k cluster centers
-        self.cluster = self.boxes_wh[np.random.choice(self.num_boxes, num_anchors, replace=False)]
-        self.cluster[:, 2] = 0  # Choose yaw = 0
+        self.cluster = self.boxes_hwl[np.random.choice(self.num_boxes, num_anchors, replace=False)]
+        self.cluster[:, -1] = 0  # Choose yaw = 0
 
         # cluster = random.sample(self.num_boxes, k)
         self.loop_cnt = 0
@@ -79,14 +87,17 @@ class Find_Anchors():
             self.loop_cnt += 1
 
             print('\nThe new cluster of count {} is below:\n'.format(self.loop_cnt))
+            print('self.cluster: {}'.format(self.cluster))
             for clus_ in self.cluster:
-                w_, h_, yaw_ = clus_
-                print('[{}, {}, {:.0f}],'.format(int(w_), int(h_), yaw_))
+                h_, w_, l_, yaw_ = clus_
+                print('[{}, {}, {}, {:.0f}],'.format(int(h_), int(w_), int(l_), yaw_))
 
-            self.cluster_conners = np.array(
-                [kitti_bev_utils.get_corners(0, 0, clus[0], clus[1], clus[2]) for clus in self.cluster])
-            self.cluster_polygons = [self.cvt_box_2_polygon(clus) for clus in self.cluster_conners]
-            self.cluster_areas = [clus.area for clus in self.cluster_polygons]
+            self.cluster_h, cluster_w, cluster_l, cluster_yaw = self.cluster.transpose(1, 0)
+
+            self.cluster_conners = kitti_bev_utils.get_corners_3d(0, 0, 0, self.cluster_h, cluster_w, cluster_l,
+                                                                  cluster_yaw)
+            self.cluster_polygons = [self.cvt_box_2_polygon(clus[:4, :2]) for clus in self.cluster_conners]
+            self.cluster_volumes = self.cluster_h * cluster_w * cluster_l
             # Calculate the iou situation at five points from each line.
             for i in range(self.num_boxes):
                 distance[i] = 1 - self.compute_iou(i)
@@ -99,8 +110,8 @@ class Find_Anchors():
 
             # Find the median of each class
             for j in range(num_anchors):
-                self.cluster[j] = np.median(self.boxes_wh[near == j], axis=0)
-            self.cluster[:, 2] = 0  # Choose yaw = 0
+                self.cluster[j] = np.median(self.boxes_hwl[near == j], axis=0)
+            self.cluster[:, -1] = 0  # Choose yaw = 0
 
             last_clu = near
 
@@ -109,7 +120,11 @@ class Find_Anchors():
 
         objects = self.get_label(sample_id)
         labels, noObjectLabels = kitti_bev_utils.read_labels_for_bevbox(objects)
-        # on image space: targets are formatted as (class, x, y, w, l, sin(yaw), cos(yaw))
+        calib = self.get_calib(sample_id)
+        if not noObjectLabels:
+            labels[:, 1:] = transformation.camera_to_lidar_box(labels[:, 1:], calib.V2C, calib.R0, calib.P)
+
+        # on image space: targets are formatted as (class, x, y, z, h, w, l, yaw)
         targets = kitti_bev_utils.build_yolo_target(labels)
 
         return targets
@@ -123,9 +138,9 @@ class Find_Anchors():
             objects = self.get_label(sample_id)
             calib = self.get_calib(sample_id)
             labels, noObjectLabels = kitti_bev_utils.read_labels_for_bevbox(objects)
+            # convert rect cam to velo cord
             if not noObjectLabels:
-                labels[:, 1:] = transformation.camera_to_lidar_box(labels[:, 1:], calib.V2C, calib.R0,
-                                                                   calib.P)  # convert rect cam to velo cord
+                labels[:, 1:] = transformation.camera_to_lidar_box(labels[:, 1:], calib.V2C, calib.R0, calib.P)
 
             valid_list = []
             for i in range(labels.shape[0]):
@@ -165,7 +180,7 @@ class Find_Anchors():
 
 if __name__ == '__main__':
     dataset_dir = '../../dataset/kitti'
-    num_anchors = 9
+    num_anchors = 3
     img_size = 608
     use_yaw_label = True
     anchors_solver = Find_Anchors(dataset_dir, img_size, use_yaw_label=use_yaw_label)
@@ -176,8 +191,8 @@ if __name__ == '__main__':
     anchors_solver.cluster = anchors_solver.cluster[np.argsort(areas)]
     print('Selected anchors_solver.cluster: ', end='')
     for clus in anchors_solver.cluster:
-        w_, h_, yaw_ = clus
-        print('{}, {}, {:.0f}'.format(int(w_), int(h_), yaw_), end=', ')
+        h_, w_, l_, yaw_ = clus
+        print('{}, {}, {}, {:.0f}'.format(int(h_), int(w_), int(l_), yaw_), end=', ')
     print('avg_iou score: {:.2f}%'.format(anchors_solver.avg_iou() * 100))
 
     ############## *************************************************** #############
@@ -224,7 +239,7 @@ if __name__ == '__main__':
     # IoU score: 90.92% (use_yaw_label=False), and 47.07% (use_yaw_label=True)
 
     #######################################################################################
-    ############################ Test Complex-YOLOv3 anchors ##############################
+    ############################ Test YOLO3D-YOLOv3 anchors ##############################
     #######################################################################################
 
     # anchors_solver.cluster = np.array([

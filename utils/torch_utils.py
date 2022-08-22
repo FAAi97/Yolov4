@@ -1,10 +1,4 @@
 """
-# -*- coding: utf-8 -*-
------------------------------------------------------------------------------------
-# Author: Nguyen Mau Dung
-# DoC: 2020.07.05
-# email: nguyenmaudung93.kstn@gmail.com
------------------------------------------------------------------------------------
 # Description: some utilities of torch (conversion)
 -----------------------------------------------------------------------------------
 # Refer: https://github.com/Tianxiaomo/pytorch-YOLOv4
