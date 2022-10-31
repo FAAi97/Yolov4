@@ -1,7 +1,7 @@
 # python detection.py --model_def config/cfg/yolo3d_yolov4.cfg --pretrained_path checkpoints/Model_yolo3d_yolov4.pth
 # python detection.py --model_def config/cfg/yolo3d_yolov4_tiny.cfg --pretrained_path checkpoints/Model_yolo3d_yolov4_tiny.pth
 
-from asyncio.windows_events import NULL
+# from asyncio.windows_events import NULL
 import os, sys, time, datetime, argparse
 
 from eval_mAP import evaluate_mAP
@@ -14,7 +14,7 @@ import cv2
 import torch
 
 sys.path.append("./")
-from data_process.distfile import distance_calculate_2d, ditanceobject_asli, draw_line_distance, loc_object
+from data_process.distfile import distance_calculate_2d,  draw_line_distance, loc_object
 import config.kitti_config as cnf
 from data_process import kitti_utils, kitti_bev_utils
 from data_process.kitti_dataloader import create_test_dataloader
