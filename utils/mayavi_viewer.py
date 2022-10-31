@@ -1,5 +1,5 @@
 import numpy as np
-import mayavi.mlab as mlab
+# import mayavi.mlab as mlab
 import cv2
 
 import sys
@@ -135,20 +135,28 @@ def get_lidar_in_image_fov(pc_velo, calib, xmin, ymin, xmax, ymax,
     else:
         return imgfov_pc_velo
 
-def show_image_with_boxes(img, objects, calib, show3d=False):
+def show_image_with_boxes(img,objects,calib, show3d=False):
     ''' Show image with 2D bounding boxes '''
-
     img2 = np.copy(img) # for 3d bbox
+    i=0
+    Cpoint=[]
+    # centerobject=distfile.loc_object(objects)
     for obj in objects:
-        if obj.type == 'DontCare': continue
-        # cv2.rectangle(img2, (int(obj.xmin),int(obj.ymin)),
-        #    (int(obj.xmax),int(obj.ymax)), (0,255,0), 2)
+        if obj.type == 'DontCare': continue 
+        elif obj.type == 'Car': continue 
+        #cv2.rectangle(img2, (int(obj.xmin),int(obj.ymin)),(int(obj.xmax),int(obj.ymax)), (0,255,0), 2)
         box3d_pts_2d, box3d_pts_3d = kitti_utils.compute_box_3d(obj, calib.P)
         if box3d_pts_2d is not None:
-            img2 = kitti_utils.draw_projected_box3d(img2, box3d_pts_2d, cnf.colors[obj.cls_id])
+            #img2 = kitti_utils.draw_projected_box3d(img2, box3d_pts_2d, cnf.colors[obj.cls_id])          
+            #view boundinbox
+            i = i+1   
+            #centerpoint
+            point = [int((int(box3d_pts_2d[1, 0])+ int(box3d_pts_2d[7,0]))/2) ,int((int(box3d_pts_2d[1,1]) +int(box3d_pts_2d[7,1]))/2)] 
+            cv2.circle(img2,(point[0],point[1]), radius=2, color=(255, 0, 255), thickness=-1) 
+            Cpoint.append(point)          
     if show3d:
         cv2.imshow("img", img2)
-    return img2
+    return img2,Cpoint
 
 def show_lidar_with_boxes(pc_velo, objects, calib,
                           img_fov=False, img_width=None, img_height=None, fig=None): 
