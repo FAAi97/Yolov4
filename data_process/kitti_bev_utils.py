@@ -158,14 +158,17 @@ def inverse_yolo_target(targets, bc):
 
 
 # send parameters in bev image coordinates format
-def drawRotatedBox(img, x, y, w, l, yaw, color):
-    bev_corners = get_corners(x, y, w, l, yaw)
-    corners_int = bev_corners.reshape(-1, 1, 2).astype(int)
-    cv2.polylines(img, [corners_int], True, color, 2)
-    corners_int = bev_corners.reshape(-1, 2)
-    cv2.line(img, (corners_int[0, 0], corners_int[0, 1]), (corners_int[3, 0], corners_int[3, 1]), (255, 255, 0), 2)
+def drawRotatedBox(img, x, y, w, l, yaw,cls_pred):
+     ctype="Pedestrian"
+     color = cnf.colors[int(cls_pred)]
+     bev_corners = get_corners(x, y, w, l, yaw)
+     corners_int = bev_corners.reshape(-1, 1, 2).astype(int)
+     cv2.polylines(img, [corners_int], True, color, 2)
+     corners_int = bev_corners.reshape(-1, 2)
+     cv2.circle(img,(int(x),int(y)), radius=1, color=(255, 255, 255), thickness=-1) 
+    
 
-
+   
 def draw_box_in_bev(rgb_map, target):
     for j in range(50):
         if (np.sum(target[j, 1:]) == 0): continue
