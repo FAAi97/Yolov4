@@ -1,5 +1,5 @@
 import numpy as np
-import mayavi.mlab as mlab
+# import mayavi.mlab as mlab
 import cv2
 from scipy.spatial import distance as dist
 import sys
